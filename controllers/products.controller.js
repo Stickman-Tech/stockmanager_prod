@@ -282,6 +282,7 @@ exports.getOrdersByDate = (req, res, next) => {
           $gte: gteDate,
           $lt: new Date(adjLteDate),
         },
+        isPaid: true,
       },
     },
     {
@@ -334,6 +335,7 @@ exports.groupByDate = (req, res, next) => {
           $gte: gteDate,
           $lt: new Date(adjLteDate),
         },
+        isPaid: true,
       },
     },
     {
@@ -562,6 +564,7 @@ exports.getProductsByDate = (req, res, next) => {
           $gte: gteDate,
           $lt: new Date(adjLteDate),
         },
+        isPaid: true,
       },
     },
     { $unwind: "$products1" },
@@ -887,6 +890,7 @@ exports.sendSummaryReport = async () => {
         $gte: startDate,
         $lt: endDate,
       },
+      isPaid: true,
     }).lean();
 
     const expenseItems = await Expense.find({
