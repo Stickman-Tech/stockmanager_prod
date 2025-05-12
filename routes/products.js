@@ -13,6 +13,7 @@ router.get("/get-single-bill/:billno", ProductController.getSingleBill);
 router.get("/get-udhars", isAdmin, ProductController.getUdharByDate);
 router.get("/get-single-udhar/:billno", ProductController.getSingleUdhar);
 router.get("/group-orders", isAdmin, ProductController.groupByDate);
+router.get("/group-city-orders", isAdmin, ProductController.groupByCity);
 router.get(
   "/get-vouchers-by-date",
   isAdmin,

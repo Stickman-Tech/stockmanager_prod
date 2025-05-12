@@ -472,6 +472,156 @@ exports.groupByDate = (req, res, next) => {
     });
 };
 
+exports.groupByCity = async (req, res, next) => {
+  try {
+    const gteDate = new Date(req.query.gte);
+    const lteDate = new Date(req.query.lte);
+    lteDate.setHours(23, 59, 59, 999);
+
+    if (isNaN(gteDate) || isNaN(lteDate)) {
+      const error = new Error("Invalid date range provided.");
+      error.title = "Error Occurred";
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const results = await Order.aggregate([
+      {
+        $match: {
+          order_date: {
+            $gte: gteDate,
+            $lte: lteDate,
+          },
+          isPaid: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "customers",
+          localField: "customer",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+      {
+        $unwind: {
+          path: "$customer",
+          preserveNullAndEmptyArrays: false, // require customer for city grouping
+        },
+      },
+      {
+        $group: {
+          _id: "$customer.city",
+          orders: { $push: "$$ROOT" },
+          total: { $sum: "$total" },
+          products: { $sum: { $size: "$products1" } },
+          cash: {
+            $sum: { $cond: [{ $eq: ["$payment_type", "Cash"] }, "$total", 0] },
+          },
+          online: {
+            $sum: {
+              $cond: [{ $eq: ["$payment_type", "Online"] }, "$total", 0],
+            },
+          },
+          card: {
+            $sum: { $cond: [{ $eq: ["$payment_type", "Card"] }, "$total", 0] },
+          },
+          cashfree: {
+            $sum: {
+              $cond: [{ $eq: ["$payment_type", "Cashfree"] }, "$total", 0],
+            },
+          },
+          ma: {
+            $sum: {
+              $cond: [{ $eq: ["$payment_type", "Ma"] }, "$total", 0],
+            },
+          },
+          other: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: [{ $type: "$paid_struc" }, "missing"] },
+                    { $eq: ["$payment_type", "Other"] },
+                  ],
+                },
+                "$total",
+                0,
+              ],
+            },
+          },
+          otherCash: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                    { $eq: ["$payment_type", "Other"] },
+                  ],
+                },
+                "$paid_struc.cash",
+                0,
+              ],
+            },
+          },
+          otherCard: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                    { $eq: ["$payment_type", "Other"] },
+                  ],
+                },
+                "$paid_struc.card",
+                0,
+              ],
+            },
+          },
+          otherBank: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                    { $eq: ["$payment_type", "Other"] },
+                  ],
+                },
+                "$paid_struc.bank",
+                0,
+              ],
+            },
+          },
+          otherMa: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                    { $eq: ["$payment_type", "Other"] },
+                  ],
+                },
+                "$paid_struc.ma",
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $sort: { total: -1 },
+      },
+    ]);
+
+    res.json(results);
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
 exports.getVouchersByDate = (req, res, next) => {
   const gteDate = new Date(req.query.gte);
   const lteDate = new Date(req.query.lte);
