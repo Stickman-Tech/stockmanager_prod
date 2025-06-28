@@ -33,11 +33,11 @@ const Voucher = mongoose.model(
 
 const getSchema = (sunil, alt, type) => {
   if (type === 1) {
-    return sunil ? iPhones3 : alt ? iPhones2 : iPhones1;
+    return sunil ? iPhones3 : alt ? iPhones2 : iPhones;
   } else if (type === 2) {
-    return sunil ? iPods3 : alt ? iPods2 : iPods1;
+    return sunil ? iPods3 : alt ? iPods2 : iPods;
   } else {
-    return sunil ? iWatches3 : alt ? iWatches2 : iWatches1;
+    return sunil ? iWatches3 : alt ? iWatches2 : iWatches;
   }
 };
 
