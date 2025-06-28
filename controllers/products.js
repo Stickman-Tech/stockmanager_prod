@@ -122,7 +122,7 @@ exports.deleteProduct = async (req, res, next) => {
 exports.getProducts = async (req, res, next) => {
   try {
     const alt = req.query.alt;
-    const sunil = req.query.alt;
+    const sunil = req.query.sunil;
 
     let iPhones = getSchema(sunil, alt, 1),
       iPods = getSchema(sunil, alt, 2),

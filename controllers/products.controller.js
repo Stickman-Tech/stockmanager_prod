@@ -43,7 +43,7 @@ const getSchema = (sunil, alt, type) => {
 
 exports.getInventory = (req, res, next) => {
   const alt = req.query.alt;
-  const sunil = req.query.alt;
+  const sunil = req.query.sunil;
   let iph = getSchema(sunil, alt, 1),
     ipd = getSchema(sunil, alt, 2),
     wth = getSchema(sunil, alt, 3);
