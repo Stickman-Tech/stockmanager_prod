@@ -12,6 +12,10 @@ const iPhones2 = require("../models/iPhones2");
 const iPods2 = require("../models/iPods2");
 const iWatches2 = require("../models/iWatches2");
 
+const iPhones3 = require("../models/iPhones3");
+const iPods3 = require("../models/iPods3");
+const iWatches3 = require("../models/iWatches3");
+
 const Expense = require("../models/Expense");
 const Stock = require("../models/stock");
 const mongoose = require("mongoose");
@@ -27,21 +31,22 @@ const Voucher = mongoose.model(
   "vouchertables"
 );
 
-const getSchema = (alt, type) => {
+const getSchema = (sunil, alt, type) => {
   if (type === 1) {
-    return alt ? iPhones2 : iPhones;
+    return sunil ? iPhones3 : alt ? iPhones2 : iPhones1;
   } else if (type === 2) {
-    return alt ? iPods2 : iPods;
+    return sunil ? iPods3 : alt ? iPods2 : iPods1;
   } else {
-    return alt ? iWatches2 : iWatches;
+    return sunil ? iWatches3 : alt ? iWatches2 : iWatches1;
   }
 };
 
 exports.getInventory = (req, res, next) => {
   const alt = req.query.alt;
-  let iph = getSchema(alt, 1),
-    ipd = getSchema(alt, 2),
-    wth = getSchema(alt, 3);
+  const sunil = req.query.alt;
+  let iph = getSchema(sunil, alt, 1),
+    ipd = getSchema(sunil, alt, 2),
+    wth = getSchema(sunil, alt, 3);
 
   let iphn, ipod;
   iph
