@@ -60,36 +60,93 @@ exports.addProduct = async (req, res, next) => {
 
 exports.editProduct = async (req, res, next) => {
   try {
-    const { type, basic, variants, id, alt } = req.body;
+    const { type, basic = {}, variants = [], id } = req.body;
 
-    let Schema =
-      type === "iPhone" ? iPhones1 : type === "iPod" ? iPods1 : iWatches1,
-      Schema2 =
-        type === "iPhone" ? iPhones2 : type === "iPod" ? iPods2 : iWatches2,
-      Schema3 =
-        type === "iPhone" ? iPhones3 : type === "iPod" ? iPods3 : iWatches3;
+    // choose correct schemas
+    const Schema =
+      type === "iPhone" ? iPhones1 : type === "iPod" ? iPods1 : iWatches1;
+    const Schema2 =
+      type === "iPhone" ? iPhones2 : type === "iPod" ? iPods2 : iWatches2;
+    const Schema3 =
+      type === "iPhone" ? iPhones3 : type === "iPod" ? iPods3 : iWatches3;
 
+    // --- Update MAIN Inventory by _id ---
     const sch1 = await Schema.findByIdAndUpdate(
       id,
       {
-        $set: type === "iPod" ? { ...basic } : { ...basic, variants: variants },
+        $set:
+          type === "iPod"
+            ? { ...basic }
+            : { ...basic, variants },
       },
       { new: true }
     );
 
-    await Schema2.findOneAndUpdate(sch1.name, {
-      $set: type === "iPod" ? { ...basic } : { ...basic, variants: variants },
-    }, { new: true });
-
-    await Schema3.findOneAndUpdate(sch1.name, {
-      $set: type === "iPod" ? { ...basic } : { ...basic, variants: variants },
-    }, { new: true });
-
-    return res.json({ success: true });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
+    if (!sch1) {
+      const err = new Error("Product not found");
+      err.statusCode = 404;
+      throw err;
     }
+
+    // helper: merge variants while keeping existing qty
+    const mergeVariantsPreserveQty = (existing = [], incoming = [], productType) => {
+      return incoming.map((inc) => {
+        let match;
+        if (productType === "iPhone") {
+          match = existing.find((ev) => ev.storage === inc.storage);
+        } else if (productType === "iWatch") {
+          match = existing.find((ev) => ev.size === inc.size && ev.type === inc.type);
+        }
+
+        return {
+          ...inc,
+          quantity: match ? match.quantity : 0, // preserve or default to 0
+        };
+      });
+    };
+
+    // --- Update Secondary Schemas ---
+    if (type === "iPod") {
+      // exclude quantity so Schema2/3 keep their own stock
+      const { quantity, ...basicWithoutQty } = basic;
+
+      await Schema2.findOneAndUpdate(
+        { name: sch1.name },
+        { $set: { ...basicWithoutQty } },
+        { new: true }
+      );
+
+      await Schema3.findOneAndUpdate(
+        { name: sch1.name },
+        { $set: { ...basicWithoutQty } },
+        { new: true }
+      );
+    } else {
+      // iPhone / iWatch → merge variants
+      const doc2 = await Schema2.findOne({ name: sch1.name });
+      if (doc2) {
+        const merged = mergeVariantsPreserveQty(doc2.variants, variants, type);
+        await Schema2.findOneAndUpdate(
+          { name: sch1.name },
+          { $set: { ...basic, variants: merged } },
+          { new: true }
+        );
+      }
+
+      const doc3 = await Schema3.findOne({ name: sch1.name });
+      if (doc3) {
+        const merged = mergeVariantsPreserveQty(doc3.variants, variants, type);
+        await Schema3.findOneAndUpdate(
+          { name: sch1.name },
+          { $set: { ...basic, variants: merged } },
+          { new: true }
+        );
+      }
+    }
+
+    return res.json({ success: true, product: sch1 });
+  } catch (err) {
+    if (!err.statusCode) err.statusCode = 500;
     next(err);
   }
 };
@@ -171,3 +228,4 @@ exports.getSingleProduct = async (req, res, next) => {
     next(err);
   }
 };
+
