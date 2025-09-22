@@ -14,9 +14,12 @@ const getStream = async (html, options) => {
     });
   }
 
-  var page = (await browser.pages())[0];
-  await page.setContent(html);
-  await page.waitForTimeout("*");
+  const page = (await browser.pages())[0] || await browser.newPage();
+
+  // set content and wait until all network requests are done
+  await page.setContent(html, { waitUntil: "networkidle0" });
+
+  // now generate PDF stream
   return await page.createPDFStream(options);
 };
 
