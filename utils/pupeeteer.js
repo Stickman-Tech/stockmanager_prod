@@ -1,5 +1,6 @@
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
+const { Readable } = require("stream");
 
 let browser;
 
@@ -7,20 +8,26 @@ const getStream = async (html, options) => {
   if (!browser) {
     browser = await puppeteer.launch({
       args: chromium.args,
-      // defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
       headless: true,
       ignoreHTTPSErrors: true,
     });
   }
 
-  const page = (await browser.pages())[0] || await browser.newPage();
+  const page = (await browser.pages())[0] || (await browser.newPage());
 
-  // set content and wait until all network requests are done
+  // render HTML (from EJS or static string)
   await page.setContent(html, { waitUntil: "networkidle0" });
 
-  // now generate PDF stream
-  return await page.createPDFStream(options);
+  // generate PDF buffer
+  const buffer = await page.pdf({
+    format: "A4",
+    printBackground: true,
+    ...options,
+  });
+
+  // wrap buffer into a Readable stream (so you can pipe just like before)
+  return Readable.from(buffer);
 };
 
 module.exports = { getStream };
