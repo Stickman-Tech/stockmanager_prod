@@ -1,22 +1,23 @@
-const path = require("path");
-const pdf = require("html-pdf");
-const opt = {
-  phantomPath: path.resolve(
-    process.cwd(),
-    "node_modules/phantomjs-prebuilt/lib/phantom/bin/phantomjs"
-  ),
-};
+const chromium = require("@sparticuz/chromium");
+const puppeteer = require("puppeteer-core");
+
+let browser;
 
 const getStream = async (html, options) => {
-  return new Promise((resolve, reject) => {
-    pdf.create(html, { ...opt, ...options }).toStream((err, stream) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(stream);
-      }
+  if (!browser) {
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true,
     });
-  });
+  }
+
+  var page = (await browser.pages())[0];
+  await page.setContent(html);
+  await page.waitForTimeout("*");
+  return await page.createPDFStream(options);
 };
 
 module.exports = { getStream };
