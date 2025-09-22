@@ -14,20 +14,18 @@ const getStream = async (html, options) => {
     });
   }
 
-  const page = (await browser.pages())[0] || (await browser.newPage());
+  const page = (await browser.pages())[0] || await browser.newPage();
 
-  // render HTML (from EJS or static string)
   await page.setContent(html, { waitUntil: "networkidle0" });
 
-  // generate PDF buffer
   const buffer = await page.pdf({
     format: "A4",
     printBackground: true,
     ...options,
   });
 
-  // wrap buffer into a Readable stream (so you can pipe just like before)
-  return Readable.from(buffer);
+  // ✅ Correct: convert Buffer to a proper Readable stream
+  return Readable.from([buffer]);
 };
 
 module.exports = { getStream };
