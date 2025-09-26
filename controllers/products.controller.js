@@ -993,7 +993,7 @@ exports.printPDF = async (req, res, next) => {
 
     var options = {
       displayHeaderFooter: false,
-      format: "A2",
+      format: "A3",
       margin: "0px",
       printBackground: true,
     };
