@@ -782,7 +782,7 @@ exports.getPdfData = async (req, res, next) => {
 
     let orders = await Order.find({
       order_date: { $gte: gteDate, $lt: new Date(lteDate) },
-    }).lean();
+    }).populate("customer").lean();
 
     let expenses = await Expense.find({
       createdAt: { $gte: gteDate, $lt: new Date(lteDate) },
@@ -813,8 +813,11 @@ exports.printPDF = async (req, res, next) => {
   try {
     const { data, date } = req.body;
 
-    let orders = data?.orders?.map((doc) => {
+    let orders = data?.orders?.map((doc, i) => {
+      const ctipin = doc?.products1?.map((d) => d?.ctpin).join(", ");
+
       return {
+        sr: i + 1,
         date: new Date(doc?.order_date)?.toLocaleDateString("en-IN", {
           timeZone: "Asia/Kolkata",
         }),
@@ -832,45 +835,69 @@ exports.printPDF = async (req, res, next) => {
         }),
         cash:
           doc?.payment_type === "Other"
-            ? doc?.paid_struc?.cash
+            ? doc?.paid_struc?.cash > 0
+              ? `₹ ${doc?.paid_struc?.cash}`
+              : "-"
             : doc?.payment_type === "Cash"
-              ? doc?.total
+              ? doc?.total > 0
+                ? `₹ ${doc?.total}`
+                : "-"
               : 0,
         card:
           doc?.payment_type === "Other"
-            ? doc?.paid_struc?.card
+            ? doc?.paid_struc?.card > 0
+              ? `₹ ${doc?.paid_struc?.card}`
+              : "-"
             : doc?.payment_type === "Card"
-              ? doc?.total
+              ? doc?.total > 0
+                ? `₹ ${doc?.total}`
+                : "-"
               : 0,
         cashfree:
           doc?.payment_type === "Other"
-            ? doc.paid_struc?.cashfree ?? 0
+            ? doc.paid_struc?.cashfree > 0
+              ? `₹ ${doc?.paid_struc?.cashfree}`
+              : "-"
             : doc?.payment_type === "Cashfree"
-              ? doc?.total
+              ? doc?.total > 0
+                ? `₹ ${doc?.total}`
+                : "-"
               : 0,
         ma:
           doc?.payment_type === "Other"
-            ? doc.paid_struc?.ma ?? 0
+            ? doc.paid_struc?.ma > 0
+              ? `₹ ${doc?.paid_struc?.ma}`
+              : "-"
             : doc?.payment_type === "Ma"
-              ? doc?.total
+              ? doc?.total > 0
+                ? `₹ ${doc?.total}`
+                : "-"
               : 0,
         online:
           doc?.payment_type === "Other"
-            ? doc?.paid_struc?.bank
+            ? doc?.paid_struc?.bank > 0
+              ? `₹ ${doc?.paid_struc?.bank}`
+              : "-"
             : doc?.payment_type === "Online"
-              ? doc?.total
+              ? doc?.total > 0
+                ? `₹ ${doc?.total}`
+                : "-"
               : 0,
-        udhar: doc?.paid_struc?.loaned ?? 0,
-        udhar: doc?.paid_struc?.loaned ?? 0,
-        total: doc?.total,
+        udhar: doc?.paid_struc?.loaned > 0 ? `₹ ${doc?.paid_struc?.loaned}` : "-",
+        udhar: doc?.paid_struc?.loaned > 0 ? `₹ ${doc?.paid_struc?.loaned}` : "-",
+        total: doc?.total > 0 ? `₹ ${doc?.total}` : "-",
         name: doc?.billName,
         Date: doc?.order_date,
         type: "order",
+        ctipin: ctipin,
+        customerName: doc?.customer?.name,
+        customerMobile: doc?.customer?.mobile,
       };
     });
 
-    let expenses = data?.expenses.map((doc) => {
+    let expenses = data?.expenses.map((doc, i) => {
       return {
+        sr: i + 1,
         date: new Date(doc?.createdAt)?.toLocaleDateString("en-IN", {
           timeZone: "Asia/Kolkata",
         }),
@@ -878,8 +905,7 @@ exports.printPDF = async (req, res, next) => {
           timeZone: "Asia/Kolkata",
         }),
         products: [
-          `${doc?.reason} (${doc?.spendOn === "personal" ? "Personal" : "Store"
-          })`,
+          `${doc?.reason} (${doc?.spendOn === "personal" ? "Personal" : "Store"})`,
         ],
         cash: 0,
         card: 0,
@@ -892,6 +918,7 @@ exports.printPDF = async (req, res, next) => {
         spendOn: doc?.spendOn ?? "store",
       };
     });
+
 
     console.log(expenses, data?.expense);
 
