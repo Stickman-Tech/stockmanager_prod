@@ -80,6 +80,7 @@
     .num {
       text-align: right;
       white-space: nowrap;
+      color: #121212;
     }
 
     /* product column: allow wrapping and vertical stacking */
@@ -135,14 +136,14 @@
           <th>Product(s)</th>
           <th style="width:150px">Customer</th>
           <th style="width:120px">Mobile</th>
-          <th style="width:120px">CTPIN</th>
-          <th style="width:110px" class="num">Cash</th>
-          <th style="width:110px" class="num">Card</th>
-          <th style="width:110px" class="num">Cashfree</th>
-          <th style="width:110px" class="num">Online</th>
-          <th style="width:110px" class="num">MA</th>
-          <th style="width:110px" class="num">Udhar</th>
-          <th style="width:130px" class="num">Total</th>
+          <th>CTPIN</th>
+          <th class="num">Cash</th>
+          <th class="num">Card</th>
+          <th class="num">Cashfree</th>
+          <th class="num">Online</th>
+          <th class="num">MA</th>
+          <th class="num">Udhar</th>
+          <th class="num">Total</th>
           <th style="width:160px">Bill Name</th>
         </tr>
       </thead>
@@ -193,7 +194,7 @@
               <%= (doc?.udharDisplay) ? doc.udharDisplay : (doc?.udhar > 0 ? ('₹ ' + doc.udhar.toLocaleString('en-IN')) : '-') %>
             </td>
 
-            <td class="num">
+            <td class="num" style="font-weight: 600;">
               <%= doc?.type === 'expense'
                 ? ('- ' + (doc?.totalDisplay ?? ('₹ ' + ((doc?.total ?? 0).toLocaleString('en-IN')))))
                 : (doc?.totalDisplay ?? ('₹ ' + ((doc?.total ?? 0).toLocaleString('en-IN'))))
