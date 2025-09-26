@@ -995,7 +995,7 @@ exports.printPDF = async (req, res, next) => {
       displayHeaderFooter: false,
       printBackground: true,
       margin: "0px",
-      width: "350mm",   // custom width
+      width: "450mm",   // custom width
       height: "500mm",  // custom height
     };
 
