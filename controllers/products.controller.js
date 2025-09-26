@@ -780,10 +780,23 @@ exports.getPdfData = async (req, res, next) => {
 
     console.log(gteDate, lteDate);
 
+    // Get all orders without populate
     let orders = await Order.find({
       order_date: { $gte: gteDate, $lt: new Date(lteDate) },
-    }).populate("customer").lean();
+    }).lean();
 
+    // Fetch customers separately with Promise.all
+    orders = await Promise.all(
+      orders.map(async (order) => {
+        if (order.customer) {
+          const customer = await Customer.findById(order.customer).lean();
+          return { ...order, customer };
+        }
+        return order;
+      })
+    );
+
+    // Expenses as usual
     let expenses = await Expense.find({
       createdAt: { $gte: gteDate, $lt: new Date(lteDate) },
     }).lean();
@@ -813,8 +826,40 @@ exports.printPDF = async (req, res, next) => {
   try {
     const { data, date } = req.body;
 
+    // Helpers
+    const formatValue = (val) => (val > 0 ? val : 0);
+    const formatDisplay = (val) => (val > 0 ? `₹ ${val}` : "-");
+
+    // ---- Orders ----
     let orders = data?.orders?.map((doc, i) => {
       const ctipin = doc?.products1?.map((d) => d?.ctpin).join(", ");
+
+      let cash = 0,
+        card = 0,
+        cashfree = 0,
+        ma = 0,
+        online = 0,
+        udhar = 0;
+
+      if (doc?.payment_type === "Other") {
+        cash = formatValue(doc?.paid_struc?.cash);
+        card = formatValue(doc?.paid_struc?.card);
+        cashfree = formatValue(doc?.paid_struc?.cashfree);
+        ma = formatValue(doc?.paid_struc?.ma);
+        online = formatValue(doc?.paid_struc?.bank);
+      } else if (doc?.payment_type === "Cash") {
+        cash = formatValue(doc?.total);
+      } else if (doc?.payment_type === "Card") {
+        card = formatValue(doc?.total);
+      } else if (doc?.payment_type === "Cashfree") {
+        cashfree = formatValue(doc?.total);
+      } else if (doc?.payment_type === "Ma") {
+        ma = formatValue(doc?.total);
+      } else if (doc?.payment_type === "Online") {
+        online = formatValue(doc?.total);
+      }
+
+      udhar = formatValue(doc?.paid_struc?.loaned);
 
       return {
         sr: i + 1,
@@ -824,78 +869,39 @@ exports.printPDF = async (req, res, next) => {
         time: new Date(doc?.order_date)?.toLocaleTimeString("en-IN", {
           timeZone: "Asia/Kolkata",
         }),
-        date: new Date(doc?.order_date)?.toLocaleDateString("en-IN", {
-          timeZone: "Asia/Kolkata",
-        }),
-        time: new Date(doc?.order_date)?.toLocaleTimeString("en-IN", {
-          timeZone: "Asia/Kolkata",
-        }),
         products: doc?.products1?.map((d) => {
           return `${d?.name} ${d?.desc}${doc.is2H ? " (2H)" : ""}`;
         }),
-        cash:
-          doc?.payment_type === "Other"
-            ? doc?.paid_struc?.cash > 0
-              ? `₹ ${doc?.paid_struc?.cash}`
-              : "-"
-            : doc?.payment_type === "Cash"
-              ? doc?.total > 0
-                ? `₹ ${doc?.total}`
-                : "-"
-              : 0,
-        card:
-          doc?.payment_type === "Other"
-            ? doc?.paid_struc?.card > 0
-              ? `₹ ${doc?.paid_struc?.card}`
-              : "-"
-            : doc?.payment_type === "Card"
-              ? doc?.total > 0
-                ? `₹ ${doc?.total}`
-                : "-"
-              : 0,
-        cashfree:
-          doc?.payment_type === "Other"
-            ? doc.paid_struc?.cashfree > 0
-              ? `₹ ${doc?.paid_struc?.cashfree}`
-              : "-"
-            : doc?.payment_type === "Cashfree"
-              ? doc?.total > 0
-                ? `₹ ${doc?.total}`
-                : "-"
-              : 0,
-        ma:
-          doc?.payment_type === "Other"
-            ? doc.paid_struc?.ma > 0
-              ? `₹ ${doc?.paid_struc?.ma}`
-              : "-"
-            : doc?.payment_type === "Ma"
-              ? doc?.total > 0
-                ? `₹ ${doc?.total}`
-                : "-"
-              : 0,
-        online:
-          doc?.payment_type === "Other"
-            ? doc?.paid_struc?.bank > 0
-              ? `₹ ${doc?.paid_struc?.bank}`
-              : "-"
-            : doc?.payment_type === "Online"
-              ? doc?.total > 0
-                ? `₹ ${doc?.total}`
-                : "-"
-              : 0,
-        udhar: doc?.paid_struc?.loaned > 0 ? `₹ ${doc?.paid_struc?.loaned}` : "-",
-        udhar: doc?.paid_struc?.loaned > 0 ? `₹ ${doc?.paid_struc?.loaned}` : "-",
-        total: doc?.total > 0 ? `₹ ${doc?.total}` : "-",
+        // numeric values
+        cash,
+        card,
+        cashfree,
+        ma,
+        online,
+        udhar,
+        total: formatValue(doc?.total),
+
+        // display values
+        cashDisplay: formatDisplay(cash),
+        cardDisplay: formatDisplay(card),
+        cashfreeDisplay: formatDisplay(cashfree),
+        maDisplay: formatDisplay(ma),
+        onlineDisplay: formatDisplay(online),
+        udharDisplay: formatDisplay(udhar),
+        totalDisplay: formatDisplay(doc?.total),
+
         name: doc?.billName,
         Date: doc?.order_date,
         type: "order",
-        ctipin: ctipin,
+        ctipin,
         customerName: doc?.customer?.name,
         customerMobile: doc?.customer?.mobile,
       };
     });
 
-    let expenses = data?.expenses.map((doc, i) => {
+    // ---- Expenses ----
+    let expenses = data?.expenses?.map((doc, i) => {
+      const amt = formatValue(doc?.amount);
       return {
         sr: i + 1,
         date: new Date(doc?.createdAt)?.toLocaleDateString("en-IN", {
@@ -907,11 +913,24 @@ exports.printPDF = async (req, res, next) => {
         products: [
           `${doc?.reason} (${doc?.spendOn === "personal" ? "Personal" : "Store"})`,
         ],
+        // numeric values
         cash: 0,
         card: 0,
         cashfree: 0,
         online: 0,
-        total: doc?.amount,
+        ma: 0,
+        udhar: 0,
+        total: amt,
+
+        // display values
+        cashDisplay: "-",
+        cardDisplay: "-",
+        cashfreeDisplay: "-",
+        onlineDisplay: "-",
+        maDisplay: "-",
+        udharDisplay: "-",
+        totalDisplay: formatDisplay(amt),
+
         name: doc?.name,
         Date: doc?.createdAt,
         type: "expense",
@@ -919,13 +938,12 @@ exports.printPDF = async (req, res, next) => {
       };
     });
 
-
-    console.log(expenses, data?.expense);
-
+    // ---- Merge & Sort ----
     let mixed = [...orders, ...expenses]?.sort((a, b) => {
       return new Date(a.Date) - new Date(b.Date);
     });
 
+    // ---- Totals ----
     let total = 0,
       cash = 0,
       card = 0,
@@ -943,33 +961,17 @@ exports.printPDF = async (req, res, next) => {
         expense += doc.total;
       }
     });
-    cash = orders?.reduce(
-      (a, b) => a + (b?.cash !== undefined ? b?.cash : 0),
-      0
-    );
-    card = orders?.reduce(
-      (a, b) => a + (b?.card !== undefined ? b?.card : 0),
-      0
-    );
-    cashfree = orders?.reduce(
-      (a, b) => a + (b?.cashfree !== undefined ? b?.cashfree : 0),
-      0
-    );
-    online = orders?.reduce(
-      (a, b) => a + (b?.online !== undefined ? b?.online : 0),
-      0
-    );
-    ma = orders?.reduce(
-      (a, b) => a + (b?.ma !== undefined ? b?.ma : 0),
-      0
-    );
-    udhar = orders?.reduce(
-      (a, b) => a + (b?.udhar !== undefined ? b?.udhar : 0),
-      0
-    );
+
+    cash = orders.reduce((a, b) => a + b.cash, 0);
+    card = orders.reduce((a, b) => a + b.card, 0);
+    cashfree = orders.reduce((a, b) => a + b.cashfree, 0);
+    online = orders.reduce((a, b) => a + b.online, 0);
+    ma = orders.reduce((a, b) => a + b.ma, 0);
+    udhar = orders.reduce((a, b) => a + b.udhar, 0);
 
     total = cash + card + cashfree + online + ma + udhar - expense + personal;
 
+    // ---- EJS ----
     var templateEjs = fs.readFileSync(
       path.join(__dirname + "/print.ejs"),
       "utf8"
@@ -991,7 +993,6 @@ exports.printPDF = async (req, res, next) => {
 
     var options = {
       displayHeaderFooter: false,
-      format: "A2",
       format: "A2",
       margin: "0px",
       printBackground: true,
