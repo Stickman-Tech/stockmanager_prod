@@ -991,12 +991,11 @@ exports.printPDF = async (req, res, next) => {
       expense,
     });
 
-    const options = {
+    var options = {
       displayHeaderFooter: false,
-      printBackground: true,
+      format: "A2",
       margin: "0px",
-      width: "450mm",   // custom width
-      height: "500mm",  // custom height
+      printBackground: true,
     };
 
     let pdfS = await puppeteer.getStream(html, options);
