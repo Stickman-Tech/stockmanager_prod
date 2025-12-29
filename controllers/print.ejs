@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,118 +13,34 @@
       --muted: #666;
       --border: #d6d6d6;
       --header-bg: #f2f2f2;
-      --accent-udhar: #9adbb9;
-      --accent-expense: #ffcccb;
       --font: "IBM Plex Sans", sans-serif;
       --small: 12px;
     }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #fff;
-      font-family: var(--font);
-      color: #222;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 1400px;
-      margin: 18px auto;
-      padding: 18px;
-      box-sizing: border-box;
-      background: #fff;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .title {
-      font-size: 20px;
-      font-weight: 600;
-    }
-
-    .date {
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: var(--small);
-    }
-
-    th, td {
-      border: 1px solid var(--border);
-      padding: 8px 10px;
-      vertical-align: top;
-    }
-
-    th {
-      background: var(--header-bg);
-      text-align: left;
-      font-weight: 600;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    /* numeric columns */
-    .num {
-      text-align: right;
-      white-space: nowrap;
-      color: #121212;
-    }
-
-    /* product column: allow wrapping and vertical stacking */
-    .products {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .products > div {
-      margin: 0;
-      padding: 0;
-      line-height: 1.15;
-    }
-
-    .summary {
-      margin-top: 20px;
-    }
-
-    .subtotal {
-      font-weight: 700;
-      background: #f8f8f8;
-    }
-
-    .total {
-      margin-top: 18px;
-      font-weight: 700;
-      font-size: 16px;
-    }
-
-    /* reduce padding for wide tables on print */
-    @media print {
-      table th, table td { padding: 6px 8px; font-size: 11px; }
-    }
+    html, body { margin: 0; padding: 0; background: #fff; font-family: var(--font); color: #222; }
+    .container { width: 100%; max-width: 1400px; margin: 18px auto; padding: 18px; box-sizing: border-box; }
+    .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .title { font-size: 20px; font-weight: 600; }
+    .date { font-size: 14px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: var(--small); }
+    th, td { border: 1px solid var(--border); padding: 8px 10px; vertical-align: top; }
+    th { background: var(--header-bg); text-align: left; font-weight: 600; font-size: 12px; white-space: nowrap; }
+    .num { text-align: right; white-space: nowrap; color: #121212; }
+    .products { display: flex; flex-direction: column; gap: 6px; }
+    .products > div { margin: 0; padding: 0; line-height: 1.15; }
+    .summary { margin-top: 20px; }
+    .subtotal { font-weight: 700; background: #f8f8f8; }
+    .total { margin-top: 18px; font-weight: 700; font-size: 16px; }
+    @media print { table th, table td { padding: 6px 8px; font-size: 11px; } }
   </style>
 </head>
-
 <body>
   <div class="container">
     <div class="header">
       <div>
         <div class="title">Sales &amp; Expense Report</div>
-        <div class="date">Date: <%= date %></div>
+        <div class="date">Date: <%-date%></div>
       </div>
-      <div class="date">Generated: <%= new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %></div>
+      <div class="date">Generated: <%-new Date().toLocaleString("en-IN", {timeZone:"Asia/Kolkata"})%></div>
     </div>
 
     <table>
@@ -143,81 +58,51 @@
           <th class="num">Online</th>
           <th class="num">MA</th>
           <th class="num">Udhar</th>
+          <th class="num">Replace</th>
           <th class="num">Total</th>
           <th>Bill Name</th>
         </tr>
       </thead>
       <tbody>
-        <% reports?.forEach((doc) => { %>
-          <tr style="background-color: <%= (doc?.udhar > 0) ? '--' : (doc?.type === 'expense' ? '--' : '#fff') %>;">
-            <!-- use inline ternaries for custom highlight because CSS variables aren't used inside EJS expression -->
-            <% if (doc?.udhar > 0) { %>
-              <script type="text/template"></script>
-            <% } %>
+<% if (reports) { reports.forEach(function(doc) { %>
+<% var bgColor = doc.udhar > 0 ? "#9adbb9" : (doc.type === "expense" ? "#ffcccb" : "#fff"); %>
+        <tr style="background-color: <%-bgColor%>;">
+          <td><%-doc.sr || "-"%></td>
+          <td><%-doc.time || "-"%></td>
+          <td>
+            <div class="products">
+<% if (doc.products) { doc.products.forEach(function(p) { %>
+              <div><%-p%></div>
+<% }); } %>
+            </div>
+          </td>
+          <td><%-doc.customerName || "-"%></td>
+          <td><%-doc.customerMobile || "-"%></td>
+          <td><%-doc.ctipin || "-"%></td>
+          <td class="num"><%-doc.cashDisplay || "-"%></td>
+          <td class="num"><%-doc.cardDisplay || "-"%></td>
+          <td class="num"><%-doc.cashfreeDisplay || "-"%></td>
+          <td class="num"><%-doc.onlineDisplay || "-"%></td>
+          <td class="num"><%-doc.maDisplay || "-"%></td>
+          <td class="num" style="background: <%-doc.udhar > 0 ? "#9adbb9" : "transparent"%>;"><%-doc.udharDisplay || "-"%></td>
+          <td class="num" style="background: <%-doc.replace > 0 ? "#b3e5fc" : "transparent"%>;"><%-doc.replaceDisplay || "-"%></td>
+          <td class="num" style="font-weight: 600;"><%-doc.type === "expense" ? "- " + doc.totalDisplay : doc.totalDisplay%></td>
+          <td><%-doc.name || "-"%></td>
+        </tr>
+<% }); } %>
 
-            <td><%= doc?.sr ?? '-' %></td>
-            <td><%= doc?.time ?? '-' %></td>
-
-            <td>
-              <div class="products">
-                <% (doc?.products ?? []).forEach((p) => { %>
-                  <div><%= p %></div>
-                <% }) %>
-              </div>
-            </td>
-
-            <td><%= doc?.customerName ?? '-' %></td>
-            <td><%= doc?.customerMobile ?? '-' %></td>
-            <td><%= doc?.ctipin ?? '-' %></td>
-
-            <td class="num">
-              <%= (doc?.cashDisplay) ? doc.cashDisplay : (doc?.cash > 0 ? ('₹ ' + doc.cash.toLocaleString('en-IN')) : '-') %>
-            </td>
-
-            <td class="num">
-              <%= (doc?.cardDisplay) ? doc.cardDisplay : (doc?.card > 0 ? ('₹ ' + doc.card.toLocaleString('en-IN')) : '-') %>
-            </td>
-
-            <td class="num">
-              <%= (doc?.cashfreeDisplay) ? doc.cashfreeDisplay : (doc?.cashfree > 0 ? ('₹ ' + doc.cashfree.toLocaleString('en-IN')) : '-') %>
-            </td>
-
-            <td class="num">
-              <%= (doc?.onlineDisplay) ? doc.onlineDisplay : (doc?.online > 0 ? ('₹ ' + doc.online.toLocaleString('en-IN')) : '-') %>
-            </td>
-
-            <td class="num">
-              <%= (doc?.maDisplay) ? doc.maDisplay : (doc?.ma > 0 ? ('₹ ' + doc.ma.toLocaleString('en-IN')) : '-') %>
-            </td>
-
-            <td class="num" style="background: <%= doc?.udhar > 0 ? '#9adbb9' : 'transparent' %>;">
-              <%= (doc?.udharDisplay) ? doc.udharDisplay : (doc?.udhar > 0 ? ('₹ ' + doc.udhar.toLocaleString('en-IN')) : '-') %>
-            </td>
-
-            <td class="num" style="font-weight: 600;">
-              <%= doc?.type === 'expense'
-                ? ('- ' + (doc?.totalDisplay ?? ('₹ ' + ((doc?.total ?? 0).toLocaleString('en-IN')))))
-                : (doc?.totalDisplay ?? ('₹ ' + ((doc?.total ?? 0).toLocaleString('en-IN'))))
-              %>
-            </td>
-
-            <td><%= doc?.name ?? '-' %></td>
-          </tr>
-        <% }) %>
-
-        <!-- Subtotal row -->
         <tr>
           <td class="subtotal" colspan="6">Subtotal</td>
-          <td class="subtotal num"><%= '₹ ' + ((cash ?? 0).toLocaleString('en-IN')) %></td>
-          <td class="subtotal num"><%= '₹ ' + ((card ?? 0).toLocaleString('en-IN')) %></td>
-          <td class="subtotal num"><%= '₹ ' + ((cashfree ?? 0).toLocaleString('en-IN')) %></td>
-          <td class="subtotal num"><%= '₹ ' + ((online ?? 0).toLocaleString('en-IN')) %></td>
-          <td class="subtotal num"><%= '₹ ' + ((ma ?? 0).toLocaleString('en-IN')) %></td>
-          <td class="subtotal num" style="background: #9adbb9"><%= '₹ ' + ((udhar ?? 0).toLocaleString('en-IN')) %></td>
-          <td class="subtotal num"><%= '₹ ' + ((total ?? 0).toLocaleString('en-IN')) %></td>
+          <td class="subtotal num">Rs. <%-cash ? cash.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-card ? card.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-cashfree ? cashfree.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-online ? online.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-ma ? ma.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #9adbb9">Rs. <%-udhar ? udhar.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #b3e5fc">Rs. <%-replace ? replace.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-total ? total.toLocaleString("en-IN") : "0"%></td>
           <td class="subtotal"></td>
         </tr>
-
       </tbody>
     </table>
 
@@ -225,53 +110,26 @@
       <h2>Summary</h2>
       <table style="max-width: 420px; margin-top: 8px;">
         <thead>
-          <tr>
-            <th>Method</th>
-            <th>Amount</th>
-          </tr>
+          <tr><th>Method</th><th>Amount</th></tr>
         </thead>
         <tbody>
-          <tr>
-            <td>Cash</td>
-            <td class="num"><strong><%= '₹ ' + ((cash ?? 0).toLocaleString('en-IN')) %></strong></td>
-          </tr>
-          <tr>
-            <td>Card</td>
-            <td class="num"><strong><%= '₹ ' + ((card ?? 0).toLocaleString('en-IN')) %></strong></td>
-          </tr>
-          <tr>
-            <td>Cashfree</td>
-            <td class="num"><strong><%= '₹ ' + ((cashfree ?? 0).toLocaleString('en-IN')) %></strong></td>
-          </tr>
-          <tr>
-            <td>Online</td>
-            <td class="num"><strong><%= '₹ ' + ((online ?? 0).toLocaleString('en-IN')) %></strong></td>
-          </tr>
-          <tr>
-            <td>MA</td>
-            <td class="num"><strong><%= '₹ ' + ((ma ?? 0).toLocaleString('en-IN')) %></strong></td>
-          </tr>
-          <tr style="background-color: #9adbb9">
-            <td>Udhar</td>
-            <td class="num"><strong><%= '₹ ' + ((udhar ?? 0).toLocaleString('en-IN')) %></strong></td>
-          </tr>
-          <tr style="background-color: #ffcccb">
-            <td>Expenses (Store)</td>
-            <td class="num"><strong style="color: #e3073c">-₹ <%= ((expense ?? 0).toLocaleString('en-IN')) %></strong></td>
-          </tr>
-          <tr style="background-color: #ffcccb">
-            <td>Expenses (Personal)</td>
-            <td class="num"><strong style="color: #e3073c">-₹ <%= ((personal ?? 0).toLocaleString('en-IN')) %></strong></td>
-          </tr>
+          <tr><td>Cash</td><td class="num"><strong>Rs. <%-cash ? cash.toLocaleString("en-IN") : "0"%></strong></td></tr>
+          <tr><td>Card</td><td class="num"><strong>Rs. <%-card ? card.toLocaleString("en-IN") : "0"%></strong></td></tr>
+          <tr><td>Cashfree</td><td class="num"><strong>Rs. <%-cashfree ? cashfree.toLocaleString("en-IN") : "0"%></strong></td></tr>
+          <tr><td>Online</td><td class="num"><strong>Rs. <%-online ? online.toLocaleString("en-IN") : "0"%></strong></td></tr>
+          <tr><td>MA</td><td class="num"><strong>Rs. <%-ma ? ma.toLocaleString("en-IN") : "0"%></strong></td></tr>
+          <tr style="background-color: #9adbb9"><td>Udhar</td><td class="num"><strong>Rs. <%-udhar ? udhar.toLocaleString("en-IN") : "0"%></strong></td></tr>
+          <tr style="background-color: #b3e5fc"><td>Replace</td><td class="num"><strong>Rs. <%-replace ? replace.toLocaleString("en-IN") : "0"%></strong></td></tr>
+          <tr style="background-color: #ffcccb"><td>Expenses (Store)</td><td class="num"><strong style="color: #e3073c">-Rs. <%-expense ? expense.toLocaleString("en-IN") : "0"%></strong></td></tr>
+          <tr style="background-color: #ffcccb"><td>Expenses (Personal)</td><td class="num"><strong style="color: #e3073c">-Rs. <%-personal ? personal.toLocaleString("en-IN") : "0"%></strong></td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="total">
       <h2>Total Sales</h2>
-      <p>₹ <%= (total ?? 0).toLocaleString('en-IN') %></p>
+      <p>Rs. <%-total ? total.toLocaleString("en-IN") : "0"%></p>
     </div>
   </div>
 </body>
-
 </html>

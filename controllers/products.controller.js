@@ -378,6 +378,11 @@ exports.groupByDate = (req, res, next) => {
             $cond: [{ $eq: ["$payment_type", "Ma"] }, "$total", 0],
           },
         },
+        udhar: {
+          $sum: {
+            $cond: [{ $eq: ["$payment_type", "Udhar"] }, "$total", 0],
+          },
+        },
         other: {
           $sum: {
             $cond: [
@@ -462,6 +467,34 @@ exports.groupByDate = (req, res, next) => {
             ],
           },
         },
+        otherLoaned: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                  { $eq: ["$payment_type", "Other"] },
+                ],
+              },
+              "$paid_struc.loaned",
+              0,
+            ],
+          },
+        },
+        otherReplace: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                  { $eq: ["$payment_type", "Other"] },
+                ],
+              },
+              "$paid_struc.replace",
+              0,
+            ],
+          },
+        },
       },
     },
     { $sort: { _id: -1 } },
@@ -541,6 +574,11 @@ exports.groupByCity = async (req, res, next) => {
               $cond: [{ $eq: ["$payment_type", "Ma"] }, "$total", 0],
             },
           },
+          udhar: {
+            $sum: {
+              $cond: [{ $eq: ["$payment_type", "Udhar"] }, "$total", 0],
+            },
+          },
           other: {
             $sum: {
               $cond: [
@@ -607,6 +645,34 @@ exports.groupByCity = async (req, res, next) => {
                   ],
                 },
                 "$paid_struc.ma",
+                0,
+              ],
+            },
+          },
+          otherLoaned: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                    { $eq: ["$payment_type", "Other"] },
+                  ],
+                },
+                "$paid_struc.loaned",
+                0,
+              ],
+            },
+          },
+          otherReplace: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                    { $eq: ["$payment_type", "Other"] },
+                  ],
+                },
+                "$paid_struc.replace",
                 0,
               ],
             },
@@ -839,7 +905,8 @@ exports.printPDF = async (req, res, next) => {
         cashfree = 0,
         ma = 0,
         online = 0,
-        udhar = 0;
+        udhar = 0,
+        replace = 0;
 
       if (doc?.payment_type === "Other") {
         cash = formatValue(doc?.paid_struc?.cash);
@@ -847,6 +914,7 @@ exports.printPDF = async (req, res, next) => {
         cashfree = formatValue(doc?.paid_struc?.cashfree);
         ma = formatValue(doc?.paid_struc?.ma);
         online = formatValue(doc?.paid_struc?.bank);
+        replace = formatValue(doc?.paid_struc?.replace);
       } else if (doc?.payment_type === "Cash") {
         cash = formatValue(doc?.total);
       } else if (doc?.payment_type === "Card") {
@@ -857,9 +925,14 @@ exports.printPDF = async (req, res, next) => {
         ma = formatValue(doc?.total);
       } else if (doc?.payment_type === "Online") {
         online = formatValue(doc?.total);
+      } else if (doc?.payment_type === "Udhar") {
+        udhar = formatValue(doc?.total);
       }
 
-      udhar = formatValue(doc?.paid_struc?.loaned);
+      // Also check for loaned in paid_struc (partial udhar from Other payment type)
+      if (doc?.paid_struc?.loaned) {
+        udhar += formatValue(doc?.paid_struc?.loaned);
+      }
 
       return {
         sr: i + 1,
@@ -879,6 +952,7 @@ exports.printPDF = async (req, res, next) => {
         ma,
         online,
         udhar,
+        replace,
         total: formatValue(doc?.total),
 
         // display values
@@ -888,6 +962,7 @@ exports.printPDF = async (req, res, next) => {
         maDisplay: formatDisplay(ma),
         onlineDisplay: formatDisplay(online),
         udharDisplay: formatDisplay(udhar),
+        replaceDisplay: formatDisplay(replace),
         totalDisplay: formatDisplay(doc?.total),
 
         name: doc?.billName,
@@ -911,7 +986,9 @@ exports.printPDF = async (req, res, next) => {
           timeZone: "Asia/Kolkata",
         }),
         products: [
-          `${doc?.reason} (${doc?.spendOn === "personal" ? "Personal" : "Store"})`,
+          `${doc?.reason} (${
+            doc?.spendOn === "personal" ? "Personal" : "Store"
+          })`,
         ],
         // numeric values
         cash: 0,
@@ -920,6 +997,7 @@ exports.printPDF = async (req, res, next) => {
         online: 0,
         ma: 0,
         udhar: 0,
+        replace: 0,
         total: amt,
 
         // display values
@@ -929,6 +1007,7 @@ exports.printPDF = async (req, res, next) => {
         onlineDisplay: "-",
         maDisplay: "-",
         udharDisplay: "-",
+        replaceDisplay: "-",
         totalDisplay: formatDisplay(amt),
 
         name: doc?.name,
@@ -951,6 +1030,7 @@ exports.printPDF = async (req, res, next) => {
       online = 0,
       ma = 0,
       udhar = 0,
+      replace = 0,
       expense = 0,
       personal = 0;
 
@@ -968,8 +1048,18 @@ exports.printPDF = async (req, res, next) => {
     online = orders.reduce((a, b) => a + b.online, 0);
     ma = orders.reduce((a, b) => a + b.ma, 0);
     udhar = orders.reduce((a, b) => a + b.udhar, 0);
+    replace = orders.reduce((a, b) => a + b.replace, 0);
 
-    total = cash + card + cashfree + online + ma + udhar - expense + personal;
+    total =
+      cash +
+      card +
+      cashfree +
+      online +
+      ma +
+      udhar +
+      replace -
+      expense +
+      personal;
 
     // ---- EJS ----
     var templateEjs = fs.readFileSync(
@@ -988,6 +1078,7 @@ exports.printPDF = async (req, res, next) => {
       online,
       personal,
       udhar,
+      replace,
       expense,
     });
 
@@ -1093,6 +1184,7 @@ exports.sendSummaryReport = async () => {
       cashfree: 0,
       ma: 0,
       udhar: 0,
+      replace: 0,
       store: 0,
       personal: 0,
     };
@@ -1104,6 +1196,7 @@ exports.sendSummaryReport = async () => {
         today.card += doc?.payment_type === "Card" ? doc.total : 0;
         today.cashfree += doc?.payment_type === "Cashfree" ? doc.total : 0;
         today.ma += doc?.payment_type === "Ma" ? doc.total : 0;
+        today.udhar += doc?.payment_type === "Udhar" ? doc.total : 0;
 
         if (doc.payment_type === "Other") {
           today.cash += doc.paid_struc.cash;
@@ -1113,6 +1206,7 @@ exports.sendSummaryReport = async () => {
           today.ma += doc.paid_struc.ma ?? 0;
 
           today.udhar += doc.paid_struc?.loaned ?? 0;
+          today.replace += doc.paid_struc?.replace ?? 0;
         }
 
         today.products += doc?.products1?.length;
@@ -1120,7 +1214,8 @@ exports.sendSummaryReport = async () => {
       }
     });
 
-    today.sales = today.card + today.card + today.online + today.cashfree + today.ma;
+    today.sales =
+      today.card + today.card + today.online + today.cashfree + today.ma;
     expenseItems.forEach((doc) => {
       if (doc?.spendOn === "personal") {
         today.personal += doc.amount;
@@ -1166,6 +1261,7 @@ exports.sendSummaryReport = async () => {
       cashfree: 0,
       ma: 0,
       udhar: 0,
+      replace: 0,
       store: 0,
       personal: 0,
     };
@@ -1177,6 +1273,7 @@ exports.sendSummaryReport = async () => {
         thisMonth.card += doc?.payment_type === "Card" ? doc.total : 0;
         thisMonth.cashfree += doc?.payment_type === "Cashfree" ? doc.total : 0;
         thisMonth.ma += doc?.payment_type === "Ma" ? doc.total : 0;
+        thisMonth.udhar += doc?.payment_type === "Udhar" ? doc.total : 0;
 
         if (doc.payment_type === "Other") {
           thisMonth.cash += doc.paid_struc.cash;
@@ -1186,6 +1283,7 @@ exports.sendSummaryReport = async () => {
           thisMonth.ma += doc.paid_struc.ma ?? 0;
 
           thisMonth.udhar += doc.paid_struc?.loaned ?? 0;
+          thisMonth.replace += doc.paid_struc?.replace ?? 0;
         }
 
         thisMonth.products += doc?.products1?.length;
@@ -1194,7 +1292,11 @@ exports.sendSummaryReport = async () => {
     });
 
     thisMonth.sales =
-      thisMonth.card + thisMonth.card + thisMonth.online + thisMonth.cashfree + thisMonth.ma;
+      thisMonth.card +
+      thisMonth.card +
+      thisMonth.online +
+      thisMonth.cashfree +
+      thisMonth.ma;
     thisMonthAllExpenseItems.forEach((doc) => {
       if (doc?.spendOn === "personal") {
         thisMonth.personal += doc.amount;

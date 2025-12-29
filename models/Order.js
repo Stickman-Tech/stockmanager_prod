@@ -17,6 +17,8 @@ var orderSchema = mongoose.Schema({
       my_price: Number,
       ctpin: Number,
       isRegistered: { type: Boolean, default: false },
+      is2H: { type: Boolean, default: false },
+      product_p: { type: Number, default: 0 },
     },
   ],
   tax: Number,
@@ -35,8 +37,12 @@ var orderSchema = mongoose.Schema({
     card: Number,
     bank: Number,
     loaned: Number,
+    cashfree: Number,
+    ma: Number,
+    replace: Number, // New Added
   },
   username: String,
+  customer_name: String,
   mobile: Number,
   email: String,
   billName: String,
@@ -48,7 +54,7 @@ var orderSchema = mongoose.Schema({
   isPaid: { type: Boolean, default: false },
   order_date: { type: Date, default: Date.now },
   billno: Number,
-  payment_type: String,
+  payment_type: String, //['Card', 'Cash', 'Online', 'Cashfree', 'MA', 'Udhar'] Udhar (New Added) = also loaned if payment_type is Other
   advance: Number,
   customer: {
     type: mongoose.Schema.Types.ObjectId,
@@ -56,6 +62,9 @@ var orderSchema = mongoose.Schema({
   },
   order_note: String,
   isLoan: { type: Boolean, default: false },
+  is2H: { type: Boolean, default: false },
+  ref2H: String,
+  pdf: String,
 });
 
 module.exports = mongoose.model("Order", orderSchema);
