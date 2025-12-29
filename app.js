@@ -25,7 +25,18 @@ app.use(cors(corsOptions));
 app.use(parser.json({ limit: "50mb" }));
 app.use(parser.urlencoded({ extended: true, limit: "50mb" }));
 
+// Special handling for service worker
+app.get('/service-worker.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(path.join(__dirname, 'build', 'service-worker.js'));
+});
+// No-cache for API routes only, NOT for static/PWA files
 app.use((req, res, next) => {
+  if (req.path.match(/\.(js|css|png|jpg|ico|json|woff|woff2)$/) || 
+      req.path === '/manifest.json') {
+    return next();
+  }
   res.set("Cache-Control", "no-store");
   next();
 });
@@ -63,3 +74,4 @@ mongoose
     });
   })
   .catch((err) => console.log(err));
+
