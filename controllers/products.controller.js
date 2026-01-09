@@ -375,7 +375,7 @@ exports.groupByDate = (req, res, next) => {
         },
         ma: {
           $sum: {
-            $cond: [{ $eq: ["$payment_type", "Ma"] }, "$total", 0],
+            $cond: [{ $eq: ["$payment_type", "MA"] }, "$total", 0],
           },
         },
         udhar: {
@@ -571,7 +571,7 @@ exports.groupByCity = async (req, res, next) => {
           },
           ma: {
             $sum: {
-              $cond: [{ $eq: ["$payment_type", "Ma"] }, "$total", 0],
+              $cond: [{ $eq: ["$payment_type", "MA"] }, "$total", 0],
             },
           },
           udhar: {
@@ -921,7 +921,7 @@ exports.printPDF = async (req, res, next) => {
         card = formatValue(doc?.total);
       } else if (doc?.payment_type === "Cashfree") {
         cashfree = formatValue(doc?.total);
-      } else if (doc?.payment_type === "Ma") {
+      } else if (doc?.payment_type === "MA") {
         ma = formatValue(doc?.total);
       } else if (doc?.payment_type === "Online") {
         online = formatValue(doc?.total);
@@ -1195,7 +1195,7 @@ exports.sendSummaryReport = async () => {
         today.online += doc?.payment_type === "Online" ? doc.total : 0;
         today.card += doc?.payment_type === "Card" ? doc.total : 0;
         today.cashfree += doc?.payment_type === "Cashfree" ? doc.total : 0;
-        today.ma += doc?.payment_type === "Ma" ? doc.total : 0;
+        today.ma += doc?.payment_type === "MA" ? doc.total : 0;
         today.udhar += doc?.payment_type === "Udhar" ? doc.total : 0;
 
         if (doc.payment_type === "Other") {
@@ -1272,7 +1272,7 @@ exports.sendSummaryReport = async () => {
         thisMonth.online += doc?.payment_type === "Online" ? doc.total : 0;
         thisMonth.card += doc?.payment_type === "Card" ? doc.total : 0;
         thisMonth.cashfree += doc?.payment_type === "Cashfree" ? doc.total : 0;
-        thisMonth.ma += doc?.payment_type === "Ma" ? doc.total : 0;
+        thisMonth.ma += doc?.payment_type === "MA" ? doc.total : 0;
         thisMonth.udhar += doc?.payment_type === "Udhar" ? doc.total : 0;
 
         if (doc.payment_type === "Other") {
