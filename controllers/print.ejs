@@ -59,6 +59,7 @@
           <th class="num">MA</th>
           <th class="num">Udhar</th>
           <th class="num">Replace</th>
+          <th class="num">Exchange</th>
           <th class="num">Total</th>
           <th>Bill Name</th>
         </tr>
@@ -86,6 +87,7 @@
           <td class="num"><%-doc.maDisplay || "-"%></td>
           <td class="num" style="background: <%-doc.udhar > 0 ? "#9adbb9" : "transparent"%>;"><%-doc.udharDisplay || "-"%></td>
           <td class="num" style="background: <%-doc.replace > 0 ? "#b3e5fc" : "transparent"%>;"><%-doc.replaceDisplay || "-"%></td>
+          <td class="num" style="background: <%-doc.exchange > 0 ? "#f3e5f5" : "transparent"%>;"><%-doc.exchangeDisplay || "-"%></td>
           <td class="num" style="font-weight: 600;"><%-doc.type === "expense" ? "- " + doc.totalDisplay : doc.totalDisplay%></td>
           <td><%-doc.name || "-"%></td>
         </tr>
@@ -100,6 +102,7 @@
           <td class="subtotal num">Rs. <%-ma ? ma.toLocaleString("en-IN") : "0"%></td>
           <td class="subtotal num" style="background: #9adbb9">Rs. <%-udhar ? udhar.toLocaleString("en-IN") : "0"%></td>
           <td class="subtotal num" style="background: #b3e5fc">Rs. <%-replace ? replace.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #f3e5f5">Rs. <%-exchange ? exchange.toLocaleString("en-IN") : "0"%></td>
           <td class="subtotal num">Rs. <%-total ? total.toLocaleString("en-IN") : "0"%></td>
           <td class="subtotal"></td>
         </tr>
@@ -120,6 +123,7 @@
           <tr><td>MA</td><td class="num"><strong>Rs. <%-ma ? ma.toLocaleString("en-IN") : "0"%></strong></td></tr>
           <tr style="background-color: #9adbb9"><td>Udhar</td><td class="num"><strong>Rs. <%-udhar ? udhar.toLocaleString("en-IN") : "0"%></strong></td></tr>
           <tr style="background-color: #b3e5fc"><td>Replace</td><td class="num"><strong>Rs. <%-replace ? replace.toLocaleString("en-IN") : "0"%></strong></td></tr>
+          <tr style="background-color: #f3e5f5"><td>Exchange</td><td class="num"><strong>Rs. <%-exchange ? exchange.toLocaleString("en-IN") : "0"%></strong></td></tr>
           <tr style="background-color: #ffcccb"><td>Expenses (Store)</td><td class="num"><strong style="color: #e3073c">-Rs. <%-expense ? expense.toLocaleString("en-IN") : "0"%></strong></td></tr>
           <tr style="background-color: #ffcccb"><td>Expenses (Personal)</td><td class="num"><strong style="color: #e3073c">-Rs. <%-personal ? personal.toLocaleString("en-IN") : "0"%></strong></td></tr>
         </tbody>
