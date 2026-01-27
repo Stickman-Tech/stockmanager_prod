@@ -40,6 +40,7 @@ var orderSchema = mongoose.Schema({
     cashfree: Number,
     ma: Number,
     replace: Number, // New Added
+    exchange: Number, // New Added
   },
   username: String,
   customer_name: String,

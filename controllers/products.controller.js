@@ -28,7 +28,7 @@ const { bucket } = require("../firebase");
 const Voucher = mongoose.model(
   "Vouchertable",
   new mongoose.Schema(),
-  "vouchertables"
+  "vouchertables",
 );
 
 const getSchema = (sunil, alt, type) => {
@@ -78,7 +78,7 @@ exports.getUdharByDate = async (req, res, next) => {
 
     if (!gteDate || !lteDate) {
       const error = new Error(
-        "Error occured while trying to retrieve orders!."
+        "Error occured while trying to retrieve orders!.",
       );
       error.title = "Error Occured";
       error.statusCode = 422;
@@ -169,7 +169,7 @@ exports.getUdharByDate = async (req, res, next) => {
 
     if (!gteDate || !lteDate) {
       const error = new Error(
-        "Error occured while trying to retrieve orders!."
+        "Error occured while trying to retrieve orders!.",
       );
       error.title = "Error Occured";
       error.statusCode = 422;
@@ -495,6 +495,20 @@ exports.groupByDate = (req, res, next) => {
             ],
           },
         },
+        otherExchange: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                  { $eq: ["$payment_type", "Other"] },
+                ],
+              },
+              "$paid_struc.exchange",
+              0,
+            ],
+          },
+        },
       },
     },
     { $sort: { _id: -1 } },
@@ -673,6 +687,20 @@ exports.groupByCity = async (req, res, next) => {
                   ],
                 },
                 "$paid_struc.replace",
+                0,
+              ],
+            },
+          },
+          otherExchange: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: [{ $type: "$paid_struc" }, "missing"] },
+                    { $eq: ["$payment_type", "Other"] },
+                  ],
+                },
+                "$paid_struc.exchange",
                 0,
               ],
             },
@@ -859,7 +887,7 @@ exports.getPdfData = async (req, res, next) => {
           return { ...order, customer };
         }
         return order;
-      })
+      }),
     );
 
     // Expenses as usual
@@ -906,7 +934,8 @@ exports.printPDF = async (req, res, next) => {
         ma = 0,
         online = 0,
         udhar = 0,
-        replace = 0;
+        replace = 0,
+        exchange = 0;
 
       if (doc?.payment_type === "Other") {
         cash = formatValue(doc?.paid_struc?.cash);
@@ -915,6 +944,7 @@ exports.printPDF = async (req, res, next) => {
         ma = formatValue(doc?.paid_struc?.ma);
         online = formatValue(doc?.paid_struc?.bank);
         replace = formatValue(doc?.paid_struc?.replace);
+        exchange = formatValue(doc?.paid_struc?.exchange);
       } else if (doc?.payment_type === "Cash") {
         cash = formatValue(doc?.total);
       } else if (doc?.payment_type === "Card") {
@@ -953,6 +983,7 @@ exports.printPDF = async (req, res, next) => {
         online,
         udhar,
         replace,
+        exchange,
         total: formatValue(doc?.total),
 
         // display values
@@ -963,6 +994,7 @@ exports.printPDF = async (req, res, next) => {
         onlineDisplay: formatDisplay(online),
         udharDisplay: formatDisplay(udhar),
         replaceDisplay: formatDisplay(replace),
+        exchangeDisplay: formatDisplay(exchange),
         totalDisplay: formatDisplay(doc?.total),
 
         name: doc?.billName,
@@ -998,6 +1030,7 @@ exports.printPDF = async (req, res, next) => {
         ma: 0,
         udhar: 0,
         replace: 0,
+        exchange: 0,
         total: amt,
 
         // display values
@@ -1008,6 +1041,7 @@ exports.printPDF = async (req, res, next) => {
         maDisplay: "-",
         udharDisplay: "-",
         replaceDisplay: "-",
+        exchangeDisplay: "-",
         totalDisplay: formatDisplay(amt),
 
         name: doc?.name,
@@ -1031,6 +1065,7 @@ exports.printPDF = async (req, res, next) => {
       ma = 0,
       udhar = 0,
       replace = 0,
+      exchange = 0,
       expense = 0,
       personal = 0;
 
@@ -1049,6 +1084,7 @@ exports.printPDF = async (req, res, next) => {
     ma = orders.reduce((a, b) => a + b.ma, 0);
     udhar = orders.reduce((a, b) => a + b.udhar, 0);
     replace = orders.reduce((a, b) => a + b.replace, 0);
+    exchange = orders.reduce((a, b) => a + b.exchange, 0);
 
     total =
       cash +
@@ -1057,14 +1093,15 @@ exports.printPDF = async (req, res, next) => {
       online +
       ma +
       udhar +
-      replace -
+      replace +
+      exchange -
       expense +
       personal;
 
     // ---- EJS ----
     var templateEjs = fs.readFileSync(
       path.join(__dirname + "/print.ejs"),
-      "utf8"
+      "utf8",
     );
     var template = ejs.compile(templateEjs);
     var html = template({
@@ -1079,6 +1116,7 @@ exports.printPDF = async (req, res, next) => {
       personal,
       udhar,
       replace,
+      exchange,
       expense,
     });
 
@@ -1185,6 +1223,7 @@ exports.sendSummaryReport = async () => {
       ma: 0,
       udhar: 0,
       replace: 0,
+      exchange: 0,
       store: 0,
       personal: 0,
     };
@@ -1207,6 +1246,7 @@ exports.sendSummaryReport = async () => {
 
           today.udhar += doc.paid_struc?.loaned ?? 0;
           today.replace += doc.paid_struc?.replace ?? 0;
+          today.exchange += doc.paid_struc?.exchange ?? 0;
         }
 
         today.products += doc?.products1?.length;
@@ -1228,13 +1268,13 @@ exports.sendSummaryReport = async () => {
     let previousStartDate = new Date(
       startDate.getUTCFullYear(),
       startDate.getUTCMonth(),
-      1
+      1,
     );
 
     let previousEndDate = new Date(
       endDate.getUTCFullYear(),
       endDate.getUTCMonth() + 1,
-      0
+      0,
     );
 
     const thisMonthitems = await Order.find({
@@ -1262,6 +1302,7 @@ exports.sendSummaryReport = async () => {
       ma: 0,
       udhar: 0,
       replace: 0,
+      exchange: 0,
       store: 0,
       personal: 0,
     };
@@ -1284,6 +1325,7 @@ exports.sendSummaryReport = async () => {
 
           thisMonth.udhar += doc.paid_struc?.loaned ?? 0;
           thisMonth.replace += doc.paid_struc?.replace ?? 0;
+          thisMonth.exchange += doc.paid_struc?.exchange ?? 0;
         }
 
         thisMonth.products += doc?.products1?.length;
@@ -1320,7 +1362,7 @@ exports.sendSummaryReport = async () => {
         } else {
           toc = data;
         }
-      }
+      },
     );
 
     const bufferImage = await puppeteer.getImageBuffer(toc, {});
@@ -1389,7 +1431,7 @@ exports.sendSummaryReport = async () => {
         method: "POST",
         headers,
         body: JSON.stringify(data),
-      }
+      },
     ).then((response) => response.json());
 
     console.log(today, thisMonth, resp);
