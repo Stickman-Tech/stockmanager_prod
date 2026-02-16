@@ -24,7 +24,7 @@ const Order = mongoose.model("Order", new mongoose.Schema(), "orders");
 const Customer = require("../models/Customer");
 const Udhar = require("../models/Udhar");
 const moment = require("moment");
-const { bucket } = require("../firebase");
+const { bucket, db: firebaseDb } = require("../firebase");
 const Voucher = mongoose.model(
   "Vouchertable",
   new mongoose.Schema(),
@@ -895,7 +895,25 @@ exports.getPdfData = async (req, res, next) => {
       createdAt: { $gte: gteDate, $lt: new Date(lteDate) },
     }).lean();
 
-    return res.json({ success: true, payload: { orders, expenses } });
+    // Purchases from second_hand_docs
+    const purchasesSnapshot = await firebaseDb
+      .collection("second_hand_docs")
+      .where("created", ">=", gteDate.toISOString())
+      .where("created", "<", lteDate.toISOString())
+      .get();
+
+    const purchases = [];
+    purchasesSnapshot.forEach((doc) => {
+      purchases.push({
+        _id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    return res.json({
+      success: true,
+      payload: { orders, expenses, purchases },
+    });
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
@@ -1051,8 +1069,54 @@ exports.printPDF = async (req, res, next) => {
       };
     });
 
+    // ---- Purchases ----
+    let purchases = data?.purchases?.map((doc, i) => {
+      const amt = formatValue(doc?.purchaseAmount);
+      const isCash = doc?.paymentMethod === "Cash";
+      const isUPI = doc?.paymentMethod === "UPI";
+      const isCard = doc?.paymentMethod === "Card";
+      const isMix = doc?.paymentMethod === "Mix";
+
+      return {
+        sr: i + 1,
+        date: new Date(doc?.created)?.toLocaleDateString("en-IN", {
+          timeZone: "Asia/Kolkata",
+        }),
+        time: new Date(doc?.created)?.toLocaleTimeString("en-IN", {
+          timeZone: "Asia/Kolkata",
+        }),
+        products: [`${doc?.phone} (${doc?.storage}) - ${doc?.condition}`],
+        ctipin: doc?.imei,
+        // numeric values
+        cash: isCash ? amt : 0,
+        card: isCard ? amt : 0,
+        cashfree: isMix ? amt : 0, // Mix mapped to Cashfree slot or similar
+        online: isUPI ? amt : 0, // UPI mapped to Online slot
+        ma: 0,
+        udhar: 0,
+        replace: 0,
+        exchange: 0,
+        total: amt,
+
+        // display values
+        cashDisplay: isCash ? formatDisplay(amt) : "-",
+        cardDisplay: isCard ? formatDisplay(amt) : "-",
+        cashfreeDisplay: isMix ? formatDisplay(amt) : "-",
+        onlineDisplay: isUPI ? formatDisplay(amt) : "-",
+        maDisplay: "-",
+        udharDisplay: "-",
+        replaceDisplay: "-",
+        exchangeDisplay: "-",
+        totalDisplay: formatDisplay(amt),
+
+        name: doc?.name,
+        Date: doc?.created,
+        type: "purchase",
+      };
+    });
+
     // ---- Merge & Sort ----
-    let mixed = [...orders, ...expenses]?.sort((a, b) => {
+    let mixed = [...orders, ...expenses, ...purchases]?.sort((a, b) => {
       return new Date(a.Date) - new Date(b.Date);
     });
 
@@ -1067,7 +1131,12 @@ exports.printPDF = async (req, res, next) => {
       replace = 0,
       exchange = 0,
       expense = 0,
-      personal = 0;
+      personal = 0,
+      purchaseTotal = 0,
+      purchaseCash = 0,
+      purchaseCard = 0,
+      purchaseUPI = 0,
+      purchaseMix = 0;
 
     expenses.forEach((doc) => {
       if (doc?.spendOn === "personal") {
@@ -1075,6 +1144,14 @@ exports.printPDF = async (req, res, next) => {
       } else {
         expense += doc.total;
       }
+    });
+
+    purchases.forEach((doc) => {
+      purchaseTotal += doc.total;
+      purchaseCash += doc.cash;
+      purchaseCard += doc.card;
+      purchaseUPI += doc.online;
+      purchaseMix += doc.cashfree;
     });
 
     cash = orders.reduce((a, b) => a + b.cash, 0);
@@ -1096,7 +1173,8 @@ exports.printPDF = async (req, res, next) => {
       replace +
       exchange -
       expense +
-      personal;
+      personal -
+      purchaseTotal;
 
     // ---- EJS ----
     var templateEjs = fs.readFileSync(
@@ -1118,6 +1196,11 @@ exports.printPDF = async (req, res, next) => {
       replace,
       exchange,
       expense,
+      purchaseTotal,
+      purchaseCash,
+      purchaseCard,
+      purchaseUPI,
+      purchaseMix,
     });
 
     var options = {
