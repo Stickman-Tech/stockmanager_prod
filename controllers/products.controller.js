@@ -1116,7 +1116,7 @@ exports.printPDF = async (req, res, next) => {
     });
 
     // ---- Merge & Sort ----
-    let mixed = [...orders, ...expenses, ...purchases]?.sort((a, b) => {
+    let mixed = [...orders, ...expenses]?.sort((a, b) => {
       return new Date(a.Date) - new Date(b.Date);
     });
 
@@ -1201,6 +1201,7 @@ exports.printPDF = async (req, res, next) => {
       purchaseCard,
       purchaseUPI,
       purchaseMix,
+      purchases,
     });
 
     var options = {

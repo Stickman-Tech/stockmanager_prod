@@ -109,6 +109,58 @@
       </tbody>
     </table>
 
+    <% if (purchases && purchases.length > 0) { %>
+    <div style="margin-top: 20px;">
+      <div class="title" style="font-size: 16px; margin-bottom: 10px;">Purchases</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Sr.</th>
+            <th>Time</th>
+            <th>Product(s)</th>
+            <th>IMEI</th>
+            <th>Customer</th>
+            <th class="num">Cash</th>
+            <th class="num">UPI</th>
+            <th class="num">Card</th>
+            <th class="num">Mix</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% purchases.forEach(function(doc) { %>
+          <tr>
+            <td><%-doc.sr || "-"%></td>
+            <td><%-doc.time || "-"%></td>
+            <td>
+              <div class="products">
+                <% if (doc.products) { doc.products.forEach(function(p) { %>
+                <div><%-p%></div>
+                <% }); } %>
+              </div>
+            </td>
+            <td><%-doc.ctipin || "-"%></td>
+            <td><%-doc.name || "-"%></td>
+            <td class="num"><%-doc.cashDisplay || "-"%></td>
+            <td class="num"><%-doc.onlineDisplay || "-"%></td>
+            <td class="num"><%-doc.cardDisplay || "-"%></td>
+            <td class="num"><%-doc.cashfreeDisplay || "-"%></td>
+            <td class="num"><%-doc.totalDisplay || "-"%></td>
+          </tr>
+          <% }); %>
+          <tr>
+            <td class="subtotal" colspan="5">Subtotal</td>
+            <td class="subtotal num">Rs. <%-purchaseCash ? purchaseCash.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num">Rs. <%-purchaseUPI ? purchaseUPI.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num">Rs. <%-purchaseCard ? purchaseCard.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num">Rs. <%-purchaseMix ? purchaseMix.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num">Rs. <%-purchaseTotal ? purchaseTotal.toLocaleString("en-IN") : "0"%></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+
     <div class="summary">
       <h2>Summary</h2>
       <table style="max-width: 420px; margin-top: 8px;">
