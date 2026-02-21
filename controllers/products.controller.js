@@ -867,16 +867,15 @@ exports.getProductsByDate = (req, res, next) => {
 
 exports.getPdfData = async (req, res, next) => {
   try {
-    const gteDate = new Date(req.params.date);
-    gteDate.setUTCHours(0, 0, 0, 0);
-    let lteDate = new Date(gteDate);
-    lteDate.setUTCHours(23, 59, 59, 0);
+    const dateParam = req.params.date.split("T")[0];
+    const gteDate = new Date(`${dateParam}T00:00:00+05:30`);
+    const lteDate = new Date(gteDate.getTime() + 24 * 60 * 60 * 1000);
 
-    console.log(gteDate, lteDate);
+    console.log("PDF Date Bounds:", gteDate, lteDate);
 
     // Get all orders without populate
     let orders = await Order.find({
-      order_date: { $gte: gteDate, $lt: new Date(lteDate) },
+      order_date: { $gte: gteDate, $lt: lteDate },
     }).lean();
 
     // Fetch customers separately with Promise.all
@@ -892,7 +891,7 @@ exports.getPdfData = async (req, res, next) => {
 
     // Expenses as usual
     let expenses = await Expense.find({
-      createdAt: { $gte: gteDate, $lt: new Date(lteDate) },
+      createdAt: { $gte: gteDate, $lt: lteDate },
     }).lean();
 
     // Purchases from second_hand_docs
