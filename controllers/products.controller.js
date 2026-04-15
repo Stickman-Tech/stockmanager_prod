@@ -896,19 +896,9 @@ exports.getPdfData = async (req, res, next) => {
     }).lean();
 
     // Purchases from second_hand_docs
-    const purchasesSnapshot = await firebaseDb
-      .collection("second_hand_docs")
-      .where("created", ">=", gteDate.toISOString())
-      .where("created", "<", lteDate.toISOString())
-      .get();
+    
 
     const purchases = [];
-    purchasesSnapshot.forEach((doc) => {
-      purchases.push({
-        _id: doc.id,
-        ...doc.data(),
-      });
-    });
 
     return res.json({
       success: true,
