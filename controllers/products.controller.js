@@ -875,7 +875,8 @@ exports.getPdfData = async (req, res, next) => {
 
     // Get all orders without populate
     let orders = await Order.find({
-      order_date: { $gte: gteDate, $lt: lteDate, isPaid: true },
+      order_date: { $gte: gteDate, $lt: lteDate },
+      isPaid: true,
     }).lean();
 
     // Fetch customers separately with Promise.all
