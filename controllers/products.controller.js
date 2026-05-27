@@ -895,10 +895,21 @@ exports.getPdfData = async (req, res, next) => {
       createdAt: { $gte: gteDate, $lt: lteDate },
     }).lean();
 
+
     // Purchases from second_hand_docs
-    
+    const purchasesSnapshot = await firebaseDb
+      .collection("second_hand_docs")
+      .where("created", ">=", gteDate.toISOString())
+      .where("created", "<", lteDate.toISOString())
+      .get();
 
     const purchases = [];
+    purchasesSnapshot.forEach((doc) => {
+      purchases.push({
+        _id: doc.id,
+        ...doc.data(),
+      });
+    });
 
     return res.json({
       success: true,
@@ -1026,8 +1037,7 @@ exports.printPDF = async (req, res, next) => {
           timeZone: "Asia/Kolkata",
         }),
         products: [
-          `${doc?.reason} (${
-            doc?.spendOn === "personal" ? "Personal" : "Store"
+          `${doc?.reason} (${doc?.spendOn === "personal" ? "Personal" : "Store"
           })`,
         ],
         // numeric values
