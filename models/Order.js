@@ -18,6 +18,7 @@ var orderSchema = mongoose.Schema({
       ctpin: Number,
       isRegistered: { type: Boolean, default: false },
       is2H: { type: Boolean, default: false },
+      is3H: { type: Boolean, default: false },
       product_p: { type: Number, default: 0 },
     },
   ],
@@ -64,7 +65,9 @@ var orderSchema = mongoose.Schema({
   order_note: String,
   isLoan: { type: Boolean, default: false },
   is2H: { type: Boolean, default: false },
+  is3H: { type: Boolean, default: false },
   ref2H: String,
+  ref3H: String,
   pdf: String,
 });
 

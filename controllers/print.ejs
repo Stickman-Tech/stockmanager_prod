@@ -93,18 +93,49 @@
         </tr>
 <% }); } %>
 
+        <!-- Standard Sales Subtotal -->
         <tr>
-          <td class="subtotal" colspan="6">Subtotal</td>
-          <td class="subtotal num">Rs. <%-cash ? cash.toLocaleString("en-IN") : "0"%></td>
-          <td class="subtotal num">Rs. <%-card ? card.toLocaleString("en-IN") : "0"%></td>
-          <td class="subtotal num">Rs. <%-cashfree ? cashfree.toLocaleString("en-IN") : "0"%></td>
-          <td class="subtotal num">Rs. <%-online ? online.toLocaleString("en-IN") : "0"%></td>
-          <td class="subtotal num">Rs. <%-ma ? ma.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal" colspan="6">Subtotal (Standard)</td>
+          <td class="subtotal num">Rs. <%-cash_standard ? cash_standard.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-card_standard ? card_standard.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-cashfree_standard ? cashfree_standard.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-online_standard ? online_standard.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-ma_standard ? ma_standard.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #9adbb9">Rs. <%-udhar_standard ? udhar_standard.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #b3e5fc">Rs. <%-replace_standard ? replace_standard.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #f3e5f5">Rs. <%-exchange_standard ? exchange_standard.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-total_standard ? total_standard.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal"></td>
+        </tr>
+
+        <!-- 3H Sales Subtotal -->
+        <tr>
+          <td class="subtotal" colspan="6">Subtotal (3H)</td>
+          <td class="subtotal num">Rs. <%-cash_3H ? cash_3H.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-card_3H ? card_3H.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-cashfree_3H ? cashfree_3H.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-online_3H ? online_3H.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-ma_3H ? ma_3H.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #9adbb9">Rs. <%-udhar_3H ? udhar_3H.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #b3e5fc">Rs. <%-replace_3H ? replace_3H.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #f3e5f5">Rs. <%-exchange_3H ? exchange_3H.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num">Rs. <%-total_3H ? total_3H.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal"></td>
+        </tr>
+
+        <!-- Overall Subtotal -->
+        <tr>
+          <td class="subtotal" colspan="6" style="background: #eee;">Subtotal (Overall)</td>
+          <td class="subtotal num" style="background: #eee;">Rs. <%-cash ? cash.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #eee;">Rs. <%-card ? card.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #eee;">Rs. <%-cashfree ? cashfree.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #eee;">Rs. <%-online ? online.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal num" style="background: #eee;">Rs. <%-ma ? ma.toLocaleString("en-IN") : "0"%></td>
           <td class="subtotal num" style="background: #9adbb9">Rs. <%-udhar ? udhar.toLocaleString("en-IN") : "0"%></td>
           <td class="subtotal num" style="background: #b3e5fc">Rs. <%-replace ? replace.toLocaleString("en-IN") : "0"%></td>
           <td class="subtotal num" style="background: #f3e5f5">Rs. <%-exchange ? exchange.toLocaleString("en-IN") : "0"%></td>
-          <td class="subtotal num">Rs. <%-total ? total.toLocaleString("en-IN") : "0"%></td>
-          <td class="subtotal"></td>
+          <td class="subtotal num" style="background: #eee;">Rs. <%-total ? total.toLocaleString("en-IN") : "0"%></td>
+          <td class="subtotal" style="background: #eee;"></td>
         </tr>
       </tbody>
     </table>
@@ -155,6 +186,77 @@
             <td class="subtotal num">Rs. <%-purchaseCard ? purchaseCard.toLocaleString("en-IN") : "0"%></td>
             <td class="subtotal num">Rs. <%-purchaseMix ? purchaseMix.toLocaleString("en-IN") : "0"%></td>
             <td class="subtotal num">Rs. <%-purchaseTotal ? purchaseTotal.toLocaleString("en-IN") : "0"%></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+
+    <% if (threeHOrders && threeHOrders.length > 0) { %>
+    <div style="margin-top: 20px;">
+      <div class="title" style="font-size: 16px; margin-bottom: 10px;">3H Sales</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Sr.</th>
+            <th>Time</th>
+            <th>Product(s)</th>
+            <th>Customer</th>
+            <th>Mobile</th>
+            <th>CTPIN</th>
+            <th class="num">Cash</th>
+            <th class="num">Card</th>
+            <th class="num">Cashfree</th>
+            <th class="num">Online</th>
+            <th class="num">MA</th>
+            <th class="num">Udhar</th>
+            <th class="num">Replace</th>
+            <th class="num">Exchange</th>
+            <th class="num">Total</th>
+            <th>Bill Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% threeHOrders.forEach(function(doc) { %>
+          <% var bgColor = doc.udhar > 0 ? "#9adbb9" : "#fff"; %>
+          <tr style="background-color: <%-bgColor%>;">
+            <td><%-doc.sr || "-"%></td>
+            <td><%-doc.time || "-"%></td>
+            <td>
+              <div class="products">
+                <% if (doc.products) { doc.products.forEach(function(p) { %>
+                <div><%-p%></div>
+                <% }); } %>
+              </div>
+            </td>
+            <td><%-doc.customerName || "-"%></td>
+            <td><%-doc.customerMobile || "-"%></td>
+            <td><%-doc.ctipin || "-"%></td>
+            <td class="num"><%-doc.cashDisplay || "-"%></td>
+            <td class="num"><%-doc.cardDisplay || "-"%></td>
+            <td class="num"><%-doc.cashfreeDisplay || "-"%></td>
+            <td class="num"><%-doc.onlineDisplay || "-"%></td>
+            <td class="num"><%-doc.maDisplay || "-"%></td>
+            <td class="num" style="background: <%-doc.udhar > 0 ? "#9adbb9" : "transparent"%>;"><%-doc.udharDisplay || "-"%></td>
+            <td class="num" style="background: <%-doc.replace > 0 ? "#b3e5fc" : "transparent"%>;"><%-doc.replaceDisplay || "-"%></td>
+            <td class="num" style="background: <%-doc.exchange > 0 ? "#f3e5f5" : "transparent"%>;"><%-doc.exchangeDisplay || "-"%></td>
+            <td class="num" style="font-weight: 600;"><%-doc.totalDisplay%></td>
+            <td><%-doc.name || "-"%></td>
+          </tr>
+          <% }); %>
+          <!-- 3H Sales Subtotal -->
+          <tr>
+            <td class="subtotal" colspan="6">Subtotal (3H)</td>
+            <td class="subtotal num">Rs. <%-cash_3H ? cash_3H.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num">Rs. <%-card_3H ? card_3H.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num">Rs. <%-cashfree_3H ? cashfree_3H.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num">Rs. <%-online_3H ? online_3H.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num">Rs. <%-ma_3H ? ma_3H.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num" style="background: #9adbb9">Rs. <%-udhar_3H ? udhar_3H.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num" style="background: #b3e5fc">Rs. <%-replace_3H ? replace_3H.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num" style="background: #f3e5f5">Rs. <%-exchange_3H ? exchange_3H.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal num">Rs. <%-total_3H ? total_3H.toLocaleString("en-IN") : "0"%></td>
+            <td class="subtotal"></td>
           </tr>
         </tbody>
       </table>

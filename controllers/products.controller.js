@@ -16,6 +16,10 @@ const iPhones3 = require("../models/iPhones3");
 const iPods3 = require("../models/iPods3");
 const iWatches3 = require("../models/iWatches3");
 
+const iPhones4 = require("../models/iPhones4");
+const iPods4 = require("../models/iPods4");
+const iWatches4 = require("../models/iWatches4");
+
 const Expense = require("../models/Expense");
 const Stock = require("../models/stock");
 const mongoose = require("mongoose");
@@ -31,22 +35,23 @@ const Voucher = mongoose.model(
   "vouchertables",
 );
 
-const getSchema = (sunil, alt, type) => {
+const getSchema = (sunil, alt, threeH, type) => {
   if (type === 1) {
-    return sunil ? iPhones3 : alt ? iPhones2 : iPhones;
+    return threeH ? iPhones4 : sunil ? iPhones3 : alt ? iPhones2 : iPhones;
   } else if (type === 2) {
-    return sunil ? iPods3 : alt ? iPods2 : iPods;
+    return threeH ? iPods4 : sunil ? iPods3 : alt ? iPods2 : iPods;
   } else {
-    return sunil ? iWatches3 : alt ? iWatches2 : iWatches;
+    return threeH ? iWatches4 : sunil ? iWatches3 : alt ? iWatches2 : iWatches;
   }
 };
 
 exports.getInventory = (req, res, next) => {
   const alt = req.query.alt;
   const sunil = req.query.sunil;
-  let iph = getSchema(sunil, alt, 1),
-    ipd = getSchema(sunil, alt, 2),
-    wth = getSchema(sunil, alt, 3);
+  const threeH = req.query.threeH;
+  let iph = getSchema(sunil, alt, threeH, 1),
+    ipd = getSchema(sunil, alt, threeH, 2),
+    wth = getSchema(sunil, alt, threeH, 3);
 
   let iphn, ipod;
   iph
@@ -828,6 +833,8 @@ exports.getProductsByDate = (req, res, next) => {
         total_value: { $sum: "$products1.price" },
         total_quantity: { $sum: "$products1.quantity" },
         type: { $first: "$products1.product" },
+        is2H: { $first: "$products1.is2H" },
+        is3H: { $first: "$products1.is3H" },
       },
     },
     { $sort: { type: 1 } },
@@ -852,6 +859,8 @@ exports.getProductsByDate = (req, res, next) => {
             totalValue: doc.total_value,
             totalQuantity: doc.total_quantity,
             type: productType,
+            is2H: doc.is2H || false,
+            is3H: doc.is3H || false,
           };
         });
       }
@@ -992,7 +1001,7 @@ exports.printPDF = async (req, res, next) => {
           timeZone: "Asia/Kolkata",
         }),
         products: doc?.products1?.map((d) => {
-          return `${d?.name} ${d?.desc}${doc.is2H ? " (2H)" : ""}`;
+          return `${d?.name} ${d?.desc}${(d?.is2H || doc?.is2H) ? " (2H)" : (d?.is3H || doc?.is3H) ? " (3H)" : ""}`;
         }),
         // numeric values
         cash,
@@ -1022,6 +1031,7 @@ exports.printPDF = async (req, res, next) => {
         ctipin,
         customerName: doc?.customer?.name,
         customerMobile: doc?.customer?.mobile,
+        is3H: doc?.is3H,
       };
     });
 
@@ -1163,6 +1173,28 @@ exports.printPDF = async (req, res, next) => {
     replace = orders.reduce((a, b) => a + b.replace, 0);
     exchange = orders.reduce((a, b) => a + b.exchange, 0);
 
+    // Standard Subtotals
+    let cash_standard = orders.filter(o => !o.is3H).reduce((a, b) => a + b.cash, 0);
+    let card_standard = orders.filter(o => !o.is3H).reduce((a, b) => a + b.card, 0);
+    let cashfree_standard = orders.filter(o => !o.is3H).reduce((a, b) => a + b.cashfree, 0);
+    let online_standard = orders.filter(o => !o.is3H).reduce((a, b) => a + b.online, 0);
+    let ma_standard = orders.filter(o => !o.is3H).reduce((a, b) => a + b.ma, 0);
+    let udhar_standard = orders.filter(o => !o.is3H).reduce((a, b) => a + b.udhar, 0);
+    let replace_standard = orders.filter(o => !o.is3H).reduce((a, b) => a + b.replace, 0);
+    let exchange_standard = orders.filter(o => !o.is3H).reduce((a, b) => a + b.exchange, 0);
+    let total_standard = cash_standard + card_standard + cashfree_standard + online_standard + ma_standard + udhar_standard + replace_standard + exchange_standard;
+
+    // 3H Subtotals
+    let cash_3H = orders.filter(o => o.is3H).reduce((a, b) => a + b.cash, 0);
+    let card_3H = orders.filter(o => o.is3H).reduce((a, b) => a + b.card, 0);
+    let cashfree_3H = orders.filter(o => o.is3H).reduce((a, b) => a + b.cashfree, 0);
+    let online_3H = orders.filter(o => o.is3H).reduce((a, b) => a + b.online, 0);
+    let ma_3H = orders.filter(o => o.is3H).reduce((a, b) => a + b.ma, 0);
+    let udhar_3H = orders.filter(o => o.is3H).reduce((a, b) => a + b.udhar, 0);
+    let replace_3H = orders.filter(o => o.is3H).reduce((a, b) => a + b.replace, 0);
+    let exchange_3H = orders.filter(o => o.is3H).reduce((a, b) => a + b.exchange, 0);
+    let total_3H = cash_3H + card_3H + cashfree_3H + online_3H + ma_3H + udhar_3H + replace_3H + exchange_3H;
+
     total =
       cash +
       card +
@@ -1202,6 +1234,25 @@ exports.printPDF = async (req, res, next) => {
       purchaseUPI,
       purchaseMix,
       purchases,
+      cash_standard,
+      card_standard,
+      cashfree_standard,
+      online_standard,
+      ma_standard,
+      udhar_standard,
+      replace_standard,
+      exchange_standard,
+      total_standard,
+      cash_3H,
+      card_3H,
+      cashfree_3H,
+      online_3H,
+      ma_3H,
+      udhar_3H,
+      replace_3H,
+      exchange_3H,
+      total_3H,
+      threeHOrders: orders.filter(o => o.is3H).map((o, idx) => ({ ...o, sr: idx + 1 })),
     });
 
     var options = {
